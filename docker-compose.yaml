@@ -9,9 +9,6 @@ services:
     image: sudharsanmaran/eagle-bot-api-automation:v1.0
     restart: on-failure
     
-    ports:
-      - "8000:8000"
-
     volumes:
       - .:/app
 
