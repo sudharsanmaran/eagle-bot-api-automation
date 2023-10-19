@@ -1,7 +1,6 @@
 import httpx
 import urllib.parse
 import os
-from google.oauth2 import client
 
 class GoogleClient:
   """A Google client class that uses httpx async."""
@@ -10,11 +9,7 @@ class GoogleClient:
     self.client_id = os.getenv('GOOGLE_CLIENT_ID')
     self.client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
     self.redirect_uri = os.getenv('GOOGLE_REDIRECT_URI')
-    self.client  = client.Credentials(
-    token_uri='https://oauth2.googleapis.com/token',
-    client_id='YOUR_CLIENT_ID',
-    client_secret='YOUR_CLIENT_SECRET',
-)
+
   async def _make_request(self, method, url, headers=None, data=None):
     """Makes a request to the Google API.
 
@@ -68,7 +63,7 @@ class GoogleClient:
       "POST",
       "https://oauth2.googleapis.com/token",
       headers=headers,
-      data=payload,
+      data=urllib.parse.urlencode(payload),
     )
 
     response.raise_for_status()
