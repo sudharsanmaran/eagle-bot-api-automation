@@ -1,97 +1,80 @@
+from fastapi import HTTPException
 import httpx
 import urllib.parse
 import os
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 
 class GoogleClient:
-  """A Google client class that uses httpx async."""
+    """A Google client class that uses httpx async."""
 
-  def __init__(self):
-    self.client_id = os.getenv('GOOGLE_CLIENT_ID')
-    self.client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
-    self.redirect_uri = os.getenv('GOOGLE_REDIRECT_URI')
+    def __init__(self):
+        self.client_id = os.getenv("GOOGLE_CLIENT_ID")
+        self.client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+        self.redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
 
-  async def _make_request(self, method, url, headers=None, data=None):
-    """Makes a request to the Google API.
+    async def _make_request(self, method, url, headers=None, data=None):
+        """Makes a request to the specified URL."""
 
-    Args:
-      method: The HTTP method.
-      url: The URL.
-      headers: The request headers.
-      data: The request body.
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.request(
+                    method,
+                    url,
+                    headers=headers,
+                    data=data,
+                    timeout=30,
+                )
 
-    Returns:
-      The response.
-    """
+                response.raise_for_status()
+                return response.json()
 
-    async with httpx.AsyncClient() as client:
-      response = await client.request(
-        method,
-        url,
-        headers=headers,
-        data=data,
-        timeout=30,
-      )
+        except httpx.HTTPError as err:
+            logger.error(f"HTTP error occurred: {err}")
+            raise HTTPException(
+                status_code=err.response.status_code, detail=err.response.text
+            )
 
-      response.raise_for_status()
+    async def exchange_code_for_tokens(self, code):
+        """Exchanges an authorization code for an access token and refresh token."""
 
-      return response
+        payload = {
+            "code": code,
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "redirect_uri": self.redirect_uri,
+            "grant_type": "authorization_code",
+        }
 
-  async def exchange_code_for_tokens(self, code):
-    """Exchanges an authorization code for an access token and refresh token.
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
 
-    Args:
-      code: The authorization code.
+        response = await self._make_request(
+            "POST",
+            "https://oauth2.googleapis.com/token",
+            headers=headers,
+            data=urllib.parse.urlencode(payload),
+        )
 
-    Returns:
-      A dictionary containing the access token and refresh token.
-    """
-    
-    payload = {
-      "code": code,
-      "client_id": self.client_id,
-      "client_secret": self.client_secret,
-      "redirect_uri": self.redirect_uri,
-      "grant_type": "authorization_code",
-    }
+        return response
 
-    headers = {
-      "Content-Type": "application/x-www-form-urlencoded",
-    }
+    async def get_consent_url(self, scope):
+        """Generates a Google consent URL with the desired scope."""
 
+        query_params = {
+            "client_id": self.client_id,
+            "response_type": "code",
+            "scope": scope,
+            "redirect_uri": self.redirect_uri,
+            "access_type": "offline",
+        }
 
-    response = await self._make_request(
-      "POST",
-      "https://oauth2.googleapis.com/token",
-      headers=headers,
-      data=urllib.parse.urlencode(payload),
-    )
+        query_string = urllib.parse.urlencode(query_params)
 
-    response.raise_for_status()
+        consent_url = "https://accounts.google.com/o/oauth2/v2/auth?" + query_string
 
-    tokens = response.json()
-
-    return tokens
-
-  async def get_consent_url(self, scope):
-    """Generates a Google consent URL with the desired scope.
-
-    Args:
-      scope: A space-separated list of the scopes that the application requires.
-
-    Returns:
-      A Google consent URL.
-    """
-
-    query_params = {
-      "client_id": self.client_id,
-      "response_type": "code",
-      "scope": scope,
-      "redirect_uri": self.redirect_uri,
-      'access_type': 'offline',
-    }
-
-    query_string = urllib.parse.urlencode(query_params)
-
-    consent_url = "https://accounts.google.com/o/oauth2/v2/auth?" + query_string
-
-    return consent_url
+        return consent_url
