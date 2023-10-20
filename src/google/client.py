@@ -78,3 +78,8 @@ class GoogleClient:
         consent_url = "https://accounts.google.com/o/oauth2/v2/auth?" + query_string
 
         return consent_url
+    
+
+    async def send_mail(self, to, subject, body, cc=None, bcc=None):
+        """Sends an email to the specified recipient."""
+        pass
