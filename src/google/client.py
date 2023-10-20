@@ -87,6 +87,7 @@ class GoogleClient:
       "response_type": "code",
       "scope": scope,
       "redirect_uri": self.redirect_uri,
+      'access_type': 'offline',
     }
 
     query_string = urllib.parse.urlencode(query_params)

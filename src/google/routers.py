@@ -1,8 +1,11 @@
 #  create fastapi router for google
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from .dependencies import token_service
+from .schemas import AuthCode
 from .client import GoogleClient
 
-google_router = APIRouter(tags=["google"], prefix="/google")
+google_router = APIRouter(tags=["google"], prefix="/v1/google")
 
 client = GoogleClient()
 
@@ -13,7 +16,10 @@ async def google_login() -> str:
     return res
 
 
-@google_router.get("/callback")
-async def google_callback(code: str):
-    res = await client.exchange_code_for_tokens(code)
-    return res
+@google_router.post("/auth_code")
+async def google_Oauth2_callback(code: AuthCode, token_service = Depends(token_service)) -> str:
+    """Google OAuth2 callback endpoint."""
+
+    tokens = await client.exchange_code_for_tokens(code)
+
+    return "success, recieved tokens"

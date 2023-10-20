@@ -14,12 +14,17 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# import debugpy
+# debugpy.listen(("0.0.0.0", 5678))
+# print("Waiting for client to attach...")
+# debugpy.wait_for_client()
 
-@app.middleware("http")
-async def set_permissions_policy_header(request: Request, call_next):
-    response = await call_next(request)
-    response.headers["Permissions-Policy"] = ""
-    return response
+
+# @app.middleware("http")
+# async def set_permissions_policy_header(request: Request, call_next):
+#     response = await call_next(request)
+#     response.headers["Permissions-Policy"] = ""
+#     return response
 
 
 # SecWeb(
@@ -36,13 +41,13 @@ async def set_permissions_policy_header(request: Request, call_next):
 # )
 
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 app.add_middleware(GZipMiddleware)
 
