@@ -10,7 +10,7 @@ client = TwitterClient()
 def twitter_login() -> str:
     """Generates a Twitter consent URL."""
 
-    res =  client.get_consent_url(
+    res =  client.get_authorize_url(
         scopes="tweet.read tweet.write users.read offline.access"
     )
 
@@ -21,6 +21,7 @@ def twitter_login() -> str:
 def twitter_Oauth2_callback(code: str) -> str:
     """Twitter OAuth2 callback endpoint."""
 
-    tokens =  client.exchange_code_for_tokens(code)
+    tokens =  client.get_token(code)
+    print(tokens)
 
     return "success, recieved tokens"
