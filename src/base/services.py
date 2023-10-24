@@ -8,6 +8,8 @@ from sqlalchemy.orm.query import Query
 from typing import List, Type
 from cachetools import cached, TTLCache
 
+from src.base.models import User
+
 logger = logging.getLogger(__name__)
 
 cache = TTLCache(maxsize=100, ttl=300) 
@@ -113,3 +115,22 @@ class ListCreateUpdateRetriveDeleteService:
             logger.info(f"Deleted {len(objs)} {self.model_class} records")
         except (IntegrityError, SQLAlchemyError) as e:
             handle_sqlalchemy_error(e, self.model_class)
+
+
+
+class UserService(ListCreateUpdateRetriveDeleteService):
+    def __init__(self, db: Session):
+        super().__init__(db, User, 'id')
+        
+    def get_by_email(self, email: str) -> Query:
+        try:
+            stmt = select(self.model_class).where(
+                getattr(self.model_class, 'email') == email)
+
+            with self.db:
+                result = self.db.execute(stmt).scalar_one()
+            return result
+        except NoResultFound:
+            logger.info(
+                f"No result found for model {self.model_class} with email {email}")
+            return None
