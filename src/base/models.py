@@ -23,6 +23,7 @@ class TokenInfoMixin:
     display_name: Mapped[str] = Column(String, nullable=False)
     access_token: Mapped[str] = Column(String, nullable=False)
     refresh_token: Mapped[str] = Column(String, nullable=False)
+    scopes: Mapped[JSON] = Column(JSON, nullable=False)
     expires_at: Mapped[int] = Column(Integer, nullable=False)
     extra_info: Mapped[JSON]  = Column(JSON, nullable=True)
     
@@ -30,7 +31,7 @@ class TokenInfoMixin:
 class User(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "users"
     
-    email: Mapped[str] = Column(String, nullable=False, unique=True)
+    email: Mapped[str] = Column(String, nullable=False, unique=True, index=True)
     access_token: Mapped[str] = Column(String, nullable=False) # incase need to call any admin server's api
     expires_at: Mapped[int] = Column(Integer, nullable=False)
 
