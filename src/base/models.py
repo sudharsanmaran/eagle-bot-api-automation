@@ -18,8 +18,8 @@ class UUIDMixin:
 
 class TokenInfoMixin:
     user_id: Mapped[uuid.UUID] = Column(UUID, ForeignKey('users.id'), nullable=False)
-    email: Mapped[str] = Column(String, nullable=False)
-    account_id: Mapped[str] = Column(String, nullable=False)
+    email: Mapped[str] = Column(String, nullable=False, unique=True, index=True)
+    account_id: Mapped[str] = Column(String, nullable=True)
     display_name: Mapped[str] = Column(String, nullable=False)
     access_token: Mapped[str] = Column(String, nullable=False)
     refresh_token: Mapped[str] = Column(String, nullable=False)

@@ -1,6 +1,8 @@
 # schemas
 
-from pydantic import BaseModel, Field
+from typing import List, Optional, Dict
+import uuid
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, Json
 
 
 class AuthCode(BaseModel):
@@ -16,3 +18,16 @@ class SendMail(BaseModel):
     body: str
     cc: str
     bcc: str
+    
+
+class GoogleTokenInfo(BaseModel):
+    user_id: uuid.UUID
+    email: EmailStr
+    account_id: str
+    display_name: str
+    access_token: str
+    refresh_token: str
+    scopes: Dict
+    expires_at: int
+    extra_info: Optional[Dict]
+    model_config = ConfigDict(from_attributes=True)

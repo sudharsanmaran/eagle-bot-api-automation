@@ -36,7 +36,7 @@ class ListCreateUpdateRetriveDeleteService:
             )
 
             with self.db:
-                results = self.db.bulk_query(stmt).all()
+                results = self.db.execute(stmt).scalar_one()
             return results
         except NoResultFound:
             logger.info(
@@ -120,7 +120,7 @@ class ListCreateUpdateRetriveDeleteService:
 
 class UserService(ListCreateUpdateRetriveDeleteService):
     def __init__(self, db: Session):
-        super().__init__(db, User, 'id')
+        super().__init__(db, User, 'email')
         
     def get_by_email(self, email: str) -> Query:
         try:

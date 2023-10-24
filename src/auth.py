@@ -25,7 +25,7 @@ class JWTBearer(HTTPBearer):
                 raise HTTPException(
                     status_code=403, detail="Invalid token or expired token.")
             self.rate_limit(credentials.credentials)
-            return payload
+            return payload, credentials.credentials
         else:
             raise HTTPException(
                 status_code=403, detail="Invalid authorization code.")
