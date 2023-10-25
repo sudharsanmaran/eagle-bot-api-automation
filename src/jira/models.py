@@ -1,36 +1,26 @@
-from sqlalchemy import Column, String
+import uuid
+from sqlalchemy import DateTime, UUID, Column, ForeignKey, String, JSON
 from sqlalchemy.orm import Mapped
 
 from src.database import Base
-from src.base.models import TimestampMixin, UUIDMixin, TokenInfoMixin
+from src.base.mixins import TimestampMixin, UUIDMixin
+from src.base.models import User
 
+class JiraUser(Base, UUIDMixin, TimestampMixin):
+    __tablename__ = "jira_users"
 
-"""
-example get user response from jira api
-{
-        "self": "https://your-domain.atlassian.net/rest/api/3/user?accountId=5b10a2844c20165700ede21g",
-        "key": "",
-        "accountId": "5b10a2844c20165700ede21g",
-        "accountType": "atlassian",
-        "name": "",
-        "emailAddress": "mia@example.com",
-        "avatarUrls": {
-            "48x48": "https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=48&s=48",
-            "24x24": "https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=24&s=24",
-            "16x16": "https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=16&s=16",
-            "32x32": "https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=32&s=32",
-        },
-        "displayName": "Mia Krystof",
-        "active": true,
-        "timeZone": "Australia/Sydney",
-        "groups": {"size": 3, "items": []},
-        "applicationRoles": {"size": 1, "items": []},
-}"""
+    user_id: Mapped[uuid.UUID] = Column(UUID, ForeignKey('users.id'), nullable=False)
+    email: Mapped[str] = Column(String, nullable=False, unique=True, index=True)
+    account_id: Mapped[str] = Column(String, nullable=False)
+    display_name: Mapped[str] = Column(String, nullable=False)
 
-
-class JiraToken(Base, UUIDMixin, TokenInfoMixin, TimestampMixin):
-    __tablename__ = "jira_tokens"
-
-    domain_name: Mapped[str] = Column(String, nullable=False)
-    time_Zone: Mapped[str] = Column(String, nullable=True)
-
+class JiraResouces(Base, UUIDMixin, TimestampMixin):
+    __tablename__ = "jira_resouces"
+    
+    user_id: Mapped[uuid.UUID] = Column(UUID, ForeignKey('jira_users.id'), nullable=False)
+    resource_id: Mapped[uuid.UUID] = Column(UUID, nullable=False, unique=True, index=True)
+    resource_name: Mapped[str] = Column(String, nullable=False)
+    access_token: Mapped[str] = Column(String, nullable=False)
+    refresh_token: Mapped[str] = Column(String, nullable=False)
+    scopes: Mapped[JSON] = Column(JSON, nullable=False)
+    expires_at: Mapped[DateTime] = Column(DateTime, nullable=False)
