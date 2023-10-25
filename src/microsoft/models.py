@@ -1,4 +1,4 @@
-from src.base.models import TimestampMixin, UUIDMixin, TokenInfoMixin
+from src.base.mixins import TimestampMixin, UUIDMixin, TokenInfoMixin
 from src.database import Base
 from sqlalchemy import Column, JSON, String, Integer
 from sqlalchemy.orm import Mapped

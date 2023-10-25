@@ -151,7 +151,14 @@ class GoogleClient:
                 .execute()
             )
             logger.info(f'Message Id: {send_message["id"]}')
+            return send_message
         except HTTPError as error:
             logger.error(f"An error occurred: {error}")
-            send_message = None
-        return send_message
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "message": "An error occurred while sending the email.",
+                    "error": f"{error}",
+                },
+            )
+

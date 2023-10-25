@@ -25,7 +25,7 @@ class SendMail(BaseModel):
 
 class GoogleTokens(BaseModel):
     access_token: str
-    expires_in: int
+    expires_at: datetime.datetime
     refresh_token: str
     scope: str
     token_type: str

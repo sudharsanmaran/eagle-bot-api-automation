@@ -91,4 +91,12 @@ async def create_project(
         return await client.get_consent_url(scope)
 
     # project = await client.create_project(user_email, data.model_dump())
-    return {"status": "ok"}
+    response =None
+
+    return {
+        "status_code": response.status_code,
+        'details': {
+            "message": "Email sent successfully.",
+            "data": response.json(),
+        },
+    }
