@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.auth import JWTBearer, decodeJWT
-from src.base.schemas import User
+from src.base.schemas import Response, User
 from src.base.services import UserService
 from .client import GoogleClient
 from .constants import ERRORS, SCOPES
@@ -95,7 +95,7 @@ async def google_Oauth2_callback(
     token_data=Depends(JWTBearer()),
     token_service: GoogleTokenService = Depends(token_service),
     user_service: UserService = Depends(user_service),
-) -> str:
+) -> Response:
     """Google OAuth2 callback endpoint."""
 
     global client
@@ -139,7 +139,7 @@ async def send_email(
     token_data=Depends(JWTBearer()),
     token_service: GoogleTokenService = Depends(token_service),
     user_service: UserService = Depends(user_service),
-) -> str:
+) -> Response:
     """Sends an email to the specified recipient."""
 
     global client

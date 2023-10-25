@@ -20,3 +20,13 @@ class TokenInfo(BaseModel):
     scopes: Dict
     expires_at: int
     extra_info: Optional[Dict]
+
+
+class Details(BaseModel):
+    message: str
+    data: Optional[Dict] = None
+    error: Optional[Dict] = None
+
+class Response(BaseModel):
+    status_code: int
+    details: Details
