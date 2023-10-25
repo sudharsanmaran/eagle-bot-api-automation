@@ -92,14 +92,6 @@ async def google_Oauth2_callback(
 
     global client
     google_tokens = await client.exchange_code_for_tokens(data.code)
-    # google_tokens = {
-    #     "access_token": "ya29.a0AfB_byDqqIYB-8RlkUMdgUxQW-PCsaJa3p-mWeFaLFL4tMR875M0_yjhHxpf2AAhXbwbkRQlNNi5s-33rOXC1nWXyM_wjtJ__nNEonNuduAJVe41O5eY707fWEG-MZzMu8Fwh71UlQbqBxXdoxUjgES2xjHyI7VXJmfl8waCgYKAXYSARASFQGOcNnCF7S4gfHtBfs5ZfvplzQkZQ0173",
-    #     "expires_in": 3599,
-    #     "refresh_token": "1//0gesTNmNWi_31CgYIARAAGBASNwF-L9IrqM2kFcUa140dAoL61D3N40_WSvQcuuKyITkAWlVvZVscSkbNkOIt2MXwVdQ3vKYvp18",
-    #     "scope": "https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email openid https://www.googleapis.com/auth/userinfo.profile",
-    #     "token_type": "Bearer",
-    #     "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEwNmFmMGI2OGEyMTE5ZDY5MmNhYzRhYmY0MTVmZjM3ODgxMzZmNjUiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI0NTE3OTkzMjE1NjQtczlrMWhrbWVsaDhjOXA3NHJmamZ2cDg2N2gzaTVnNGUuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiI0NTE3OTkzMjE1NjQtczlrMWhrbWVsaDhjOXA3NHJmamZ2cDg2N2gzaTVnNGUuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMDg4MTYyMjA3MDY4MDQyNzE0MjkiLCJoZCI6InNvZnRzdWF2ZS5jb20iLCJlbWFpbCI6InN1ZGhhcnNhbi5tYXJhcHBhbkBzb2Z0c3VhdmUuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImF0X2hhc2giOiJUX0ZDQU8tQzNvRXlheHRVbVBXUFVBIiwibmFtZSI6IlN1ZGhhcnNhbiBNYXJhcHBhbiIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NKSDBZT2Zwc05HX3AxWFFOZGViTFJDdk1DX0U5NG5yZExsdVRyRDFXS0RSUT1zOTYtYyIsImdpdmVuX25hbWUiOiJTdWRoYXJzYW4iLCJmYW1pbHlfbmFtZSI6Ik1hcmFwcGFuIiwibG9jYWxlIjoiZW4iLCJpYXQiOjE2OTgxNTM1NzIsImV4cCI6MTY5ODE1NzE3Mn0.AZI_EyuDG3_HxWEX6jNmwm4dH3KmG_msD8PLyCmhLXnSorqhMtv9sIRlbEV7cypG3l-ZE6uAT9SDhcRA0sEmU7akwADsDppSYMFkwJ9wKN9NtOup7CEd4B-n7yG7VpcfhqSQ9cZVwStAOuvhFO5D2lrngt0IugtqQxtdTX99WI4b-D1xr8Q16g5yNkGsVAyfKNlZY0fvVcQbI6951bPveZpASF1UNRtz461lOTF1nRxj90ErLV5ltqM_QMQyNhlbft5JsAEEofMJXMTGqgLwMAAQjfS7E3b_KQPZWyrRlTigschRgB7chX_hgezLMPcYf7jBEgm-Eljl63qGdcSzdQ",
-    # }
     credential = await client.get_credential(GoogleTokens(**google_tokens))
     profile = await client.get_user_profile(credentials=credential)
     user_info, sso_token = token_data
