@@ -135,7 +135,7 @@ async def send_email(
 
     global client
     scopes = [*SCOPES["BASIC"], *SCOPES["SEND_EMAIL"]]
-    user_info, sso_token = token_data
+    user_info, _ = token_data
     credentials, email = await get_updated_credential_with_scopes(
         user_info, token_service, user_service, scopes
     )
