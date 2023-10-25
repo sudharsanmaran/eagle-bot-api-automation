@@ -1,13 +1,15 @@
-import datetime
+import base64
+from email.message import EmailMessage
 import json
 from fastapi import HTTPException
-import httplib2
+from google.auth.transport.requests import Request
 import httpx
 import urllib.parse
 import os
 import logging
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
+from requests import HTTPError
 
 
 logger = logging.getLogger(__name__)
@@ -21,6 +23,7 @@ class GoogleClient:
         self.client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
         self.redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
         self.token_uri = "https://oauth2.googleapis.com/token"
+        self.request = Request()
 
     async def _make_request(self, method, url, headers=None, data=None):
         """Makes a request to the specified URL."""
@@ -91,11 +94,12 @@ class GoogleClient:
 
         credentials = Credentials.from_authorized_user_info(
             {
-                "access_token": tokens["access_token"],
-                "refresh_token": tokens["refresh_token"],
+                "access_token": getattr(tokens, "access_token"),
+                "refresh_token": getattr(tokens, "refresh_token"),
                 "client_id": self.client_id,
                 "client_secret": self.client_secret,
                 "token_uri": self.token_uri,
+                "expiry": getattr(tokens, "expires_at").strftime("%Y-%m-%dT%H:%M:%S"),
             }
         )
         return credentials
@@ -106,7 +110,7 @@ class GoogleClient:
         credentials = await self.get_credential(tokens)
         is_refreshed = False
         if credentials.expired:
-            credentials.refresh(httplib2.Http())
+            credentials.refresh(self.request)
             is_refreshed = True
 
         return credentials, is_refreshed
@@ -114,10 +118,41 @@ class GoogleClient:
     async def get_user_profile(self, credentials: Credentials) -> dict:
         """Returns the user's profile from Google."""
 
-        service = build('oauth2', 'v2', credentials=credentials)
+        service = build("oauth2", "v2", credentials=credentials)
         user_info = service.userinfo().get().execute()
         return user_info
 
-    async def send_mail(self, to, subject, body, cc=None, bcc=None):
+    async def send_mail(
+        self, to, subject, body, credentials: Credentials, from_email, cc=None, bcc=None
+    ):
         """Sends an email to the specified recipient."""
-        pass
+        try:
+            service = build("gmail", "v1", credentials=credentials)
+            message = EmailMessage()
+
+            message.set_content(body)
+
+            message["To"] = to
+            message["From"] = from_email
+            message["Subject"] = subject
+            if cc:
+                message["Cc"] = cc
+            if bcc:
+                message["Bcc"] = bcc
+
+            # encoded message
+            encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+
+            create_message = {"raw": encoded_message}
+            # pylint: disable=E1101
+            send_message = (
+                service.users()
+                .messages()
+                .send(userId="me", body=create_message)
+                .execute()
+            )
+            logger.info(f'Message Id: {send_message["id"]}')
+        except HTTPError as error:
+            logger.error(f"An error occurred: {error}")
+            send_message = None
+        return send_message

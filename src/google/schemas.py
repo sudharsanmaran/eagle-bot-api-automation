@@ -1,8 +1,11 @@
 # schemas
 
-from typing import List, Optional, Dict
+import datetime
+from typing import Optional
 import uuid
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, Json
+from pydantic import BaseModel, ConfigDict, Field
+
+from src.base.schemas import TokenInfo
 
 
 class AuthCode(BaseModel):
@@ -16,18 +19,19 @@ class SendMail(BaseModel):
     to: str
     subject: str
     body: str
-    cc: str
-    bcc: str
-    
+    cc: Optional[str] = None
+    bcc: Optional[str] = None
 
-class GoogleTokenInfo(BaseModel):
-    user_id: uuid.UUID
-    email: EmailStr
-    account_id: str
-    display_name: str
+
+class GoogleTokens(BaseModel):
     access_token: str
+    expires_in: int
     refresh_token: str
-    scopes: Dict
-    expires_at: int
-    extra_info: Optional[Dict]
+    scope: str
+    token_type: str
+    id_token: str
+
+
+class GoogleTokenInfo(TokenInfo):
+    expires_at: datetime.datetime
     model_config = ConfigDict(from_attributes=True)

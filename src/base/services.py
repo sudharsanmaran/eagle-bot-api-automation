@@ -77,15 +77,12 @@ class ListCreateUpdateRetriveDeleteService:
         except (IntegrityError, SQLAlchemyError) as e:
             handle_sqlalchemy_error(e, self.model_class)
 
-    def update(self, existing_record, obj) -> Query:
+    def update(self, obj) -> Query:
         try:
-            if existing_record:
-                for key, value in obj.items():
-                    setattr(existing_record, key, value)
             with self.db.begin():
-                self.db.merge(existing_record)
+                self.db.merge(obj)
             logger.info(f"Updated {self.model_class} with parameters {obj}")
-            return existing_record
+            return obj
         except (IntegrityError, SQLAlchemyError) as e:
             handle_sqlalchemy_error(e, self.model_class)
 
