@@ -97,11 +97,12 @@ class ListCreateUpdateRetriveDeleteService:
                 for key, value in obj.items():
                     setattr(existing_record, key, value)
             with self.db.begin():
-                self.db.merge(existing_record or self.model_class(**obj))
-            self.db.flush()
+                merged = self.db.merge(existing_record or self.model_class(**obj))
+                self.db.flush()
+                self.db.refresh(merged)
             logger.info(
                 f"Created or updated {self.model_class} with parameters {obj}")
-            return existing_record or self.model_class(**obj)
+            return merged
         except (IntegrityError, SQLAlchemyError) as e:
             handle_sqlalchemy_error(e, self.model_class)
             

@@ -5,6 +5,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from Secweb import SecWeb
 from src.google.routers import google_router
 from src.twitter.routers import twitter_router
+from src.jira.routers import jira_router
 
 
 load_dotenv()
@@ -55,7 +56,7 @@ app.add_middleware(GZipMiddleware)
 
 app.include_router(google_router)
 app.include_router(twitter_router)
-
+app.include_router(jira_router)
 
 @app.get("/")
 def root():
