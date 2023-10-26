@@ -11,5 +11,4 @@ class GoogleTokenService(ListCreateUpdateRetriveDeleteService):
         super().__init__(db, GoogleToken, 'id')
 
     def get_access_token(self, user_id: uuid.UUID, email: str = None):
-        # get token or refresh token or none if not found with scope
         return self.get(user_id=user_id)
