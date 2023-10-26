@@ -1,9 +1,9 @@
 # schemas
 
 import datetime
-from typing import Optional
+from typing import List, Optional
 import uuid
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from src.base.schemas import TokenInfo
 
@@ -16,11 +16,11 @@ class AuthCode(BaseModel):
 
 
 class SendMail(BaseModel):
-    to: str
+    to: List[EmailStr]
     subject: str
     body: str
-    cc: Optional[str] = None
-    bcc: Optional[str] = None
+    cc: Optional[List[EmailStr]] = None
+    bcc: Optional[List[EmailStr]] = None
 
 
 class GoogleTokens(BaseModel):

@@ -1,6 +1,7 @@
 import base64
 from email.message import EmailMessage
 import json
+from typing import List, Optional
 from fastapi import HTTPException
 from google.auth.transport.requests import Request
 import httpx
@@ -9,7 +10,7 @@ import os
 import logging
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
-from requests import HTTPError
+from googleapiclient.errors import Error
 
 
 logger = logging.getLogger(__name__)
@@ -104,14 +105,27 @@ class GoogleClient:
         )
         return credentials
 
-    async def get_valid_credential(self, tokens) -> Credentials:
+    async def get_valid_credential(self, tokens, combained_scopes) -> Credentials:
         """Returns a valid Google credential object from tokens."""
 
         credentials = await self.get_credential(tokens)
         is_refreshed = False
         if credentials.expired:
-            credentials.refresh(self.request)
-            is_refreshed = True
+            try:
+                credentials.refresh(self.request)
+                is_refreshed = True
+            except Error as error:
+                logger.error(f"An error occurred: {error}")
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "message": "An error occurred while refreshing the token. give consent and try again.",
+                        "error": f"{error}",
+                        "consent_url": await self.get_consent_url(
+                            scopes=combained_scopes
+                        ),
+                    },
+                )
 
         return credentials, is_refreshed
 
@@ -123,7 +137,15 @@ class GoogleClient:
         return user_info
 
     async def send_mail(
-        self, to, subject, body, credentials: Credentials, from_email, cc=None, bcc=None
+        self,
+        to: List,
+        subject,
+        body,
+        credentials: Credentials,
+        from_email,
+        cc: Optional[List] = None,
+        bcc: Optional[List] = None,
+        combained_scopes: str = None,
     ):
         """Sends an email to the specified recipient."""
         try:
@@ -152,13 +174,28 @@ class GoogleClient:
             )
             logger.info(f'Message Id: {send_message["id"]}')
             return send_message
-        except HTTPError as error:
+        except Error as error:
+            status_code = error.resp.status
+            reason = error._get_reason()
+
+            if status_code == 401 or reason == "invalidCredentials":
+                logger.error(f"An error occurred: {error}")
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "message": "An error occurred while sending the email. give consent and try again.",
+                        "error": f"{error}",
+                        "consent_url": await self.get_consent_url(
+                            scopes=combained_scopes
+                        ),
+                    },
+                )
+
             logger.error(f"An error occurred: {error}")
             raise HTTPException(
                 status_code=400,
                 detail={
                     "message": "An error occurred while sending the email.",
-                    "error": f"{error}",
+                    "error": reason,
                 },
             )
-

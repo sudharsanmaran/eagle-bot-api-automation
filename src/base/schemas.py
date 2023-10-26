@@ -22,11 +22,12 @@ class TokenInfo(BaseModel):
     extra_info: Optional[Dict]
 
 
-class Details(BaseModel):
+class Detail(BaseModel):
     message: str
     data: Optional[Dict] = None
     error: Optional[Dict] = None
 
+
 class Response(BaseModel):
     status_code: int
-    details: Details
+    detail: Detail
