@@ -1,14 +1,15 @@
+import json
 from fastapi import HTTPException
 import httpx
 import urllib.parse
+from urllib.parse import urlencode, quote
 import os
+from src.jira.utils import dict2str
 
-from src.jira.constants import BASE_URL_FOR_JIRA_API
+from src.jira.constants import BASE_URL_FOR_JIRA_API, CONTENTTYPE, JIRA_OAUTH_TOKEN_URL
 
 
 class JiraClient:
-    """A jira client class that uses httpx async."""
-
     def __init__(self):
         self.client_id = os.getenv("jira_CLIENT_ID")
         self.client_secret = os.getenv("jira_CLIENT_SECRET")
@@ -34,26 +35,19 @@ class JiraClient:
                     url,
                     headers=headers,
                     data=data,
-                    timeout=30,
+                    timeout=60,
                 )
 
                 response.raise_for_status()
-            except httpx.HTTPStatusError as exc:
+                return response.json()
+            except httpx.HTTPStatusError as err:
+                details = json.loads(err.response.text)
                 raise HTTPException(
-                    status_code=exc.response.status_code, detail=str(exc)
+                    status_code=err.response.status_code,
+                    detail=details,
                 )
-            return response.json()
 
     async def exchange_code_for_tokens(self, code):
-        """Exchanges an authorization code for an access token and refresh token.
-
-        Args:
-          code: The authorization code.
-
-        Returns:
-          A dictionary containing the access token and refresh token.
-        """
-
         payload = {
             "code": code,
             "client_id": self.client_id,
@@ -61,20 +55,17 @@ class JiraClient:
             "redirect_uri": self.redirect_uri,
             "grant_type": "authorization_code",
         }
-
-        headers = {
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
+        headers = {"Content-Type": CONTENTTYPE["AXFORM"]}
 
         response = await self._make_request(
             "POST",
-            "https://auth.atlassian.com/oauth/token",
+            JIRA_OAUTH_TOKEN_URL,
             headers=headers,
             data=urllib.parse.urlencode(payload),
         )
 
         return response
-    
+
     async def get_Jira_user(self, token):
         headers = {"Authorization": f"Bearer {token}"}
         response = await self._make_request(
@@ -82,9 +73,9 @@ class JiraClient:
             "https://api.atlassian.com/me",
             headers=headers,
         )
-        
+
         return response
-    
+
     async def get_user_accessible_resources(self, token):
         headers = {"Authorization": f"Bearer {token}"}
         response = await self._make_request(
@@ -94,13 +85,7 @@ class JiraClient:
         )
         return response
 
-    async def get_consent_url(self, scope: str):
-        """Generates a jira consent URL with the desired scope.
-
-        Returns:
-          A jira consent URL.
-        """
-
+    async def get_consent_url(self, scope: str, err_mess: str):
         query_params = {
             "audience": "api.atlassian.com",
             "client_id": self.client_id,
@@ -110,12 +95,38 @@ class JiraClient:
             "prompt": "consent",
             "redirect_uri": self.redirect_uri,
         }
-
-        query_string = urllib.parse.urlencode(query_params)
+        query_string = urlencode(query_params, quote_via=quote)
 
         consent_url = f"https://auth.atlassian.com/authorize?" + query_string
+        details = {
+            "error": err_mess,
+            "consent_url": consent_url,
+        }
+        raise HTTPException(
+            status_code=400,
+            detail=details,
+        )
 
-        return consent_url
+    async def get_jira_rotational_token(self, refresh_token: str, scopes: str):
+        data = {
+            "grant_type": "refresh_token",
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "refresh_token": refresh_token,
+        }
+        headers = {"Content-Type": CONTENTTYPE["AJSON"]}
+        try:
+            response = await self._make_request(
+                method="POST",
+                url=JIRA_OAUTH_TOKEN_URL,
+                headers=headers,
+                data=json.dumps(data),
+            )
+            return response
+        except HTTPException as err:
+            if err.detail["error"] == "unauthorized_client":
+                await self.get_consent_url(dict2str(scopes), "unauthorized_client")
+            return response
 
     def fetch_jira_details_for_user(self, user_eamil):
         # later get access token for user eamil
@@ -133,18 +144,46 @@ class JiraClient:
 
         return res
 
-    async def create_project(self, user_eamil, data):
+    async def create_project(self, resource: object, jira_user: object, data):
         """Creates a new project in Jira."""
-        user_jira_details = self.fetch_jira_details_for_user(user_eamil)
-        data["leadAccountId"] = user_jira_details["account_id"]
-        cloudid = user_jira_details["resource_details"].get("id")
-        headers = {"Authorization": f"Bearer {user_jira_details['access_token']}"}
+        data["projectTemplateKey"] = "com.pyxis.greenhopper.jira:gh-simplified-basic"
+        data["projectTypeKey"] = "software"
+        data["leadAccountId"] = jira_user.account_id
+        cloudid = resource.resource_id
+        headers = {
+            "Authorization": f"Bearer {resource.access_token}",
+            "Content-Type": "application/json",
+        }
 
         response = await self._make_request(
             "POST",
-            f"{BASE_URL_FOR_JIRA_API}rest/api/3/project".format(cloudid),
+            BASE_URL_FOR_JIRA_API.format(cloudid) + "rest/api/3/project",
             headers=headers,
-            data=data,
+            data=json.dumps(data),
+        )
+
+        return response
+
+    async def create_issue(self, resource: object, jira_user: object, data):
+        """Creates a new issue for project in Jira."""
+        payload = {
+            "fields": {
+                "summary": data['summary'],
+                "project": {"id": data['project']},
+                "issuetype": {"id": data['issuetype']},
+            }
+        }
+        cloudid = resource.resource_id
+        headers = {
+            "Authorization": f"Bearer {resource.access_token}",
+            "Content-Type": "application/json",
+        }
+
+        response = await self._make_request(
+            "POST",
+            BASE_URL_FOR_JIRA_API.format(cloudid) + "rest/api/3/issue",
+            headers=headers,
+            data=json.dumps(payload),
         )
 
         return response
