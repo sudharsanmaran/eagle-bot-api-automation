@@ -10,6 +10,7 @@ from src.base.services import ListCreateUpdateRetrieveDeleteService, UserService
 from src.microsoft import InitialMicrosoftGraphURLs
 from src.microsoft.client import UserAPI
 from src.microsoft.methods import generate_json_for_microsoft_code, generate_json_for_token
+from ..base.schemas import Response, Detail
 
 
 @Authorization
@@ -75,3 +76,9 @@ def authorize_user(code, service: ListCreateUpdateRetrieveDeleteService, user_se
         response_data['expires_in'] = recreate_expires_at(response_data['expires_in'])
         update_data(response_data, service, user_service, user)
     return response_data
+
+
+def prepare_response(data: dict, status_code, message='', ):
+    detail = Detail(message=message, data=data)
+    response = Response(status_code=status_code, detail=detail)
+    return response
