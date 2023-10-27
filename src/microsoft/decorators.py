@@ -9,6 +9,7 @@ from src.microsoft import RefreshMicrosoftToken
 
 logger = logging.getLogger(__name__)
 
+
 def recreate_expires_at(seconds: int):
     current_time_stamp = datetime.utcnow().timestamp().__int__()
     return current_time_stamp + seconds
