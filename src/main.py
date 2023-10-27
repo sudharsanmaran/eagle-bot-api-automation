@@ -11,7 +11,6 @@ from src.microsoft.routers import microsoft_router
 
 load_dotenv()
 
-
 app = FastAPI(
     title="Eagle Bot API Automations",
     version="1.0.0",
@@ -54,17 +53,16 @@ app = FastAPI(
 
 app.add_middleware(GZipMiddleware)
 
-
 app.include_router(google_router)
 app.include_router(microsoft_router)
 app.include_router(twitter_router)
 app.include_router(jira_router)
 
+
 @app.get("/")
 def root():
     return {"message": "application started successfully"}
 
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
