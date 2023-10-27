@@ -115,7 +115,7 @@ async def google_Oauth2_callback(
     user_data = User(
         email=user_info["email"], access_token=sso_token, expires_at=user_info["exp"]
     )
-    user = user_service.create_or_update(user_data.model_dump())
+    user = user_service.create_or_update(user_data.model_dump(), lookup_field='email')
     scopes_list = google_tokens["scope"].split()
     scopes_dict = dict.fromkeys(scopes_list, True)
     google_token_data = GoogleTokenInfo(
@@ -159,7 +159,7 @@ async def get_all_available_accounts(
         "status_code": 200,
         "detail": {
             "message": "Accounts fetched successfully.",
-            "data": emails,
+            "data": {'accounts': emails},
         },
     }
 
