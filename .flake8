@@ -1,0 +1,10 @@
+[flake8]
+max-line-length = 120
+exclude =
+    .gitignore,
+    .dockerignore,
+    alembic,
+    alembic.ini,
+    alembic_upgrade,
+    env,
+    venv
