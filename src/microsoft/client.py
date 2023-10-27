@@ -1,5 +1,3 @@
-
-import os
 import requests
 
 from .api_urls import MicrosoftGraphURLs
@@ -15,6 +13,7 @@ class MicrosoftGraphAPI:
 
     def post_request(self, endpoint, data):
         url = self.construct_url(endpoint)
+        print(url, self.headers, data)
         response = requests.post(url, data=data, headers=self.headers)
         return response.json()
 
