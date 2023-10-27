@@ -1,10 +1,18 @@
 from enum import Enum
 
 BASE_URL_FOR_JIRA_API = "https://api.atlassian.com/ex/jira/{}/"
+JIRA_OAUTH_TOKEN_URL = "https://auth.atlassian.com/oauth/token"
+CONTENTTYPE = {
+    "AXFORM": "application/x-www-form-urlencoded",
+    "AJSON": "application/json",
+}
+
 
 class JiarScope(str, Enum):
-    BASIC = 'offline_access read:me'
-    CREATE_PROJECT = 'manage:jira-configuration'
+    BASIC = "offline_access read:me"
+    MANAGE_JIRA_CONF = "manage:jira-configuration"
+    WRITE_JIRA_WORK = "write:jira-work"
+
 
 class AssTypeEnum(str, Enum):
     UNASSIGNED = ("UNASSIGNED",)
