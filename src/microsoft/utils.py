@@ -6,7 +6,7 @@ import requests
 from requests import PreparedRequest
 
 from src.microsoft.decorators import Authorization
-from src.base.services import ListCreateUpdateRetriveDeleteService, UserService
+from src.base.services import ListCreateUpdateRetrieveDeleteService, UserService
 from src.microsoft import InitialMicrosoftGraphURLs
 from src.microsoft.client import UserAPI
 from src.microsoft.methods import generate_json_for_microsoft_code, generate_json_for_token
@@ -37,7 +37,7 @@ def recreate_expires_at(seconds: int):
     return current_time_stamp + seconds
 
 
-def update_data(data, service: ListCreateUpdateRetriveDeleteService, user_service: UserService, user: dict):
+def update_data(data, service: ListCreateUpdateRetrieveDeleteService, user_service: UserService, user: dict):
     user_from_db = user_service.get_by_email(user[0]['email'])
     if not user_from_db:
         user_from_db = user_service.create({
@@ -62,7 +62,7 @@ def update_data(data, service: ListCreateUpdateRetriveDeleteService, user_servic
     })
 
 
-def authorize_user(code, service: ListCreateUpdateRetriveDeleteService, user_service: UserService, user: dict):
+def authorize_user(code, service: ListCreateUpdateRetrieveDeleteService, user_service: UserService, user: dict):
     base_url = InitialMicrosoftGraphURLs.BASE_URL.value.format(tenant=os.environ.get('MICROSOFT_TENANT_ID'))
     url = base_url + InitialMicrosoftGraphURLs.TOKEN_URL.value
     data = generate_json_for_token(code)

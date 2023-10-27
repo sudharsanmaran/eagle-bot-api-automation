@@ -12,27 +12,32 @@ from src.base.models import User
 
 logger = logging.getLogger(__name__)
 
-cache = TTLCache(maxsize=100, ttl=300) 
+cache = TTLCache(maxsize=100, ttl=300)
 
 
-def handle_sqlalchemy_error(error: SQLAlchemyError, model_name: str):
-    error_message = "An error occurred while logging this request to database."
-    logger.error(f"Error with model {model_name}: {error}")
-    raise HTTPException(status_code=400, detail=error_message)
-
-
-class ListCreateUpdateRetriveDeleteService:
+class ListCreateUpdateRetrieveDeleteService:
     def __init__(self, db: Session, model_class: Type, primary_key_name: str):
         self.db = db
         self.model_class = model_class
         self.primary_key_name = primary_key_name
-    
+        self.logger = logger
+
+    @staticmethod
+    def handle_sqlalchemy_error(error: SQLAlchemyError, model_name: str):
+        error_message = "An error occurred with the database."
+        logger.error(f"Error with model {model_name}: {error}")
+        raise HTTPException(status_code=400, detail=error_message)
+
     @cached(cache)
     def get(self, **kwargs) -> Query:
         try:
             stmt = select(self.model_class).where(
-                and_(*(getattr(self.model_class, key) ==
-                     value for key, value in kwargs.items()))
+                and_(
+                    *(
+                        getattr(self.model_class, key) == value
+                        for key, value in kwargs.items()
+                    )
+                )
             )
 
             with self.db:
@@ -40,85 +45,166 @@ class ListCreateUpdateRetriveDeleteService:
             return results
         except NoResultFound:
             logger.info(
-                f"No result found for model {self.model_class} with parameters {kwargs}")
+                f"No result found for model {self.model_class} with parameters {kwargs}"
+            )
             return None
 
+    @cached(cache)
     def get_by_primary_key(self, primary_key_value) -> Query:
         try:
             stmt = select(self.model_class).where(
-                getattr(self.model_class, self.primary_key_name) == primary_key_value)
+                getattr(self.model_class, self.primary_key_name) == primary_key_value
+            )
 
             with self.db:
                 result = self.db.execute(stmt).scalar_one()
             return result
         except NoResultFound:
             logger.info(
-                f"No result found for model {self.model_class} with primary key {primary_key_value}")
+                f"No result found for model {self.model_class} with primary key {primary_key_value}"
+            )
             return None
 
-    def list(self, limit: int = 10, offset: int = 0) -> List[Query]:
+    def get_all(self, **kwargs) -> Query:
         try:
-            stmt = select(self.model_class).offset(offset).limit(limit)
+            stmt = select(self.model_class).where(
+                and_(
+                    *(
+                        getattr(self.model_class, key) == value
+                        for key, value in kwargs.items()
+                    )
+                )
+            )
 
             with self.db:
-                results = self.db.bulk_query(stmt).all()
+                results = self.db.execute(stmt).scalars().all()
+            return results
+        except NoResultFound:
+            logger.info(
+                f"No result found for model {self.model_class} with parameters {kwargs}"
+            )
+            return None
+
+    @cached(cache)
+    def list(self, limit: int = 10, offset: int = 0, **kwargs) -> List[Query]:
+        try:
+            stmt = (
+                select(self.model_class)
+                .where(
+                    and_(
+                        *(
+                            getattr(self.model_class, key) == value
+                            for key, value in kwargs.items()
+                        )
+                    )
+                )
+                .offset(offset)
+                .limit(limit)
+            )
+
+            with self.db:
+                results = self.db.execute(stmt).scalars().all()
             return results
         except SQLAlchemyError as e:
-            handle_sqlalchemy_error(e, self.model_class)
+            self.handle_sqlalchemy_error(e, self.model_class)
 
     def create(self, obj) -> Query:
         try:
             obj = self.model_class(**obj)
             with self.db.begin():
-                self.db.merge(obj)
-            logger.info(
-                f"Created new {self.model_class} with parameters {obj}")
+                self.db.add(obj)
+                self.db.flush()
+                self.db.refresh(obj)
+            logger.info(f"Created new {self.model_class} with parameters {obj}")
             return obj
         except (IntegrityError, SQLAlchemyError) as e:
-            handle_sqlalchemy_error(e, self.model_class)
+            self.handle_sqlalchemy_error(e, self.model_class)
 
     def update(self, obj) -> Query:
         try:
             with self.db.begin():
                 self.db.merge(obj)
+                self.db.flush()
+                self.db.refresh(obj)
             logger.info(f"Updated {self.model_class} with parameters {obj}")
             return obj
         except (IntegrityError, SQLAlchemyError) as e:
-            handle_sqlalchemy_error(e, self.model_class)
+            self.handle_sqlalchemy_error(e, self.model_class)
 
-    def create_or_update(self, obj, lookup_field=None) -> Query:
+    def bulk_update(self, objs: List) -> List[Query]:
         try:
-            if lookup_field:
-                existing_record = self.get(**{lookup_field: obj[lookup_field]})
-            else:
-                existing_record = self.get_by_primary_key(
-                    obj[self.primary_key_name])
+            with self.db.begin():
+                self.db.bulk_update_mappings(self.model_class, objs)
+                self.db.flush()
+                self.db.refresh(objs)
+            logger.info(f"Bulk updated {len(objs)} {self.model_class} records")
+            return objs
+        except (IntegrityError, SQLAlchemyError) as e:
+            self.handle_sqlalchemy_error(e, self.model_class)
+
+    def create_or_update(self, obj, lookup_field) -> Query:
+        try:
+            existing_record = self.get(**{lookup_field: obj[lookup_field]})
             if existing_record:
                 for key, value in obj.items():
                     setattr(existing_record, key, value)
-            with self.db.begin():
-                merged = self.db.merge(existing_record or self.model_class(**obj))
-                self.db.flush()
-                self.db.refresh(merged)
-            logger.info(
-                f"Created or updated {self.model_class} with parameters {obj}")
-            return merged
+            else:
+                existing_record = self.model_class(**obj)
+            return self.update(existing_record)
         except (IntegrityError, SQLAlchemyError) as e:
-            handle_sqlalchemy_error(e, self.model_class)
-            
-    def delete(self, objs: List) -> None:
+            self.handle_sqlalchemy_error(e, self.model_class)
+
+    def bulk_create_or_update(self, objs: List[dict], lookup_field: str) -> None:
+        try:
+            lookup_values = [obj[lookup_field] for obj in objs]
+
+            existing_records = (
+                self.db.query(self.model_class)
+                .filter(getattr(self.model_class, lookup_field).in_(lookup_values))
+                .all()
+            )
+
+            existing_records_dict = {
+                getattr(record, lookup_field): record for record in existing_records
+            }
+
+            updates = []
+            inserts = []
+
+            for obj in objs:
+                record = existing_records_dict.get(obj[lookup_field])
+                if record:
+                    for key, value in obj.items():
+                        setattr(record, key, value)
+                    updates.append(record)
+                else:
+                    inserts.append(self.model_class(**obj))
+
+            with self.db.begin():
+                # Perform bulk update and insert
+                self.db.bulk_update_mappings(
+                    self.model_class, [dict(u) for u in updates]
+                )
+                self.db.bulk_save_objects(inserts)
+
+            logger.info(
+                f"Bulk created or updated {len(objs)} {self.model_class} records"
+            )
+        except (IntegrityError, SQLAlchemyError) as e:
+            self.handle_sqlalchemy_error(e, self.model_class)
+
+    def delete(self, obj) -> None:
         try:
             with self.db.begin():
-                self.db.bulk_delete(objs)
-            logger.info(f"Deleted {len(objs)} {self.model_class} records")
+                self.db.delete(obj)
+            logger.info(f"Deleted {self.model_class} with parameters {obj}")
         except (IntegrityError, SQLAlchemyError) as e:
-            handle_sqlalchemy_error(e, self.model_class)
+            self.handle_sqlalchemy_error(e, self.model_class)
 
 
-
-class UserService(ListCreateUpdateRetriveDeleteService):
+class UserService(ListCreateUpdateRetrieveDeleteService):
     def __init__(self, db: Session):
-        super().__init__(db, User, 'email')
-        
+        super().__init__(db, User, "email")
+
     def get_by_email(self, email: str) -> Query:
         return self.get(email=email)

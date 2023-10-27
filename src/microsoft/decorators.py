@@ -4,7 +4,7 @@ from typing import List
 
 from sqlalchemy_orm import session
 
-from src.base.services import UserService, ListCreateUpdateRetriveDeleteService
+from src.base.services import UserService, ListCreateUpdateRetrieveDeleteService
 from src.microsoft import RefreshMicrosoftToken
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class Authorization:
         self.function = function
 
     def __call__(self, db: session, user_name, scopes: List[str],
-                 user_service: UserService, service: ListCreateUpdateRetriveDeleteService):
+                 user_service: UserService, service: ListCreateUpdateRetrieveDeleteService):
         self.db = db
         self.email = user_name
         self.scopes = scopes

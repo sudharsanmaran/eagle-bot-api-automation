@@ -5,20 +5,20 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.query import Query
 from sqlalchemy.orm import session
 
-from src.base.services import ListCreateUpdateRetriveDeleteService
+from src.base.services import ListCreateUpdateRetrieveDeleteService
 
 from .models import JiraUser, JiraResouces
 
 logger = logging.getLogger(__name__)
 
-class JiraUserService(ListCreateUpdateRetriveDeleteService):
+class JiraUserService(ListCreateUpdateRetrieveDeleteService):
     def __init__(self, db: session):
         super().__init__(db, JiraUser, 'id')
         
     def get_by_userId(self, userId: uuid.UUID) -> Query:
         return self.get(user_id=userId)
     
-class JiraResouceService(ListCreateUpdateRetriveDeleteService):
+class JiraResouceService(ListCreateUpdateRetrieveDeleteService):
     def __init__(self, db: session):
         super().__init__(db, JiraResouces, 'id')
     
