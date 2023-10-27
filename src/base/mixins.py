@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import UUID, Column, DateTime, func, String, Integer, JSON, ForeignKey
+from sqlalchemy import UUID, Column, DateTime, func, String, Integer, JSON, ForeignKey, BOOLEAN
 from sqlalchemy.orm import Mapped
 
 class TimestampMixin:
@@ -20,5 +20,6 @@ class TokenInfoMixin:
     access_token: Mapped[str] = Column(String, nullable=False)
     refresh_token: Mapped[str] = Column(String, nullable=False)
     scopes: Mapped[JSON] = Column(JSON, nullable=False)
+    default: Mapped[bool] = Column(BOOLEAN, nullable=False, default=False)
     expires_at: Mapped[int] = Column(Integer, nullable=False)
     extra_info: Mapped[JSON]  = Column(JSON, nullable=True)

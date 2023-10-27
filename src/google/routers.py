@@ -43,7 +43,7 @@ async def raise_missing_scopes_exception(scopes):
     raise HTTPException(status_code=400, detail=details)
 
 
-async def get_tokens(scopes: str, user: dict, service: GoogleTokenService):
+async def get_tokens(scopes: List, user, service: GoogleTokenService):
     """Gets the access token for the user, or raises an exception"""
 
     tokens = service.get_access_token(user_id=user.id)
@@ -55,8 +55,12 @@ async def get_tokens(scopes: str, user: dict, service: GoogleTokenService):
 
 async def get_updated_credential(scopes: str, user: dict, service: GoogleTokenService):
     global client
-    tokens, combained_scopes = await get_tokens(scopes=scopes, user=user, service=service)
-    credential, is_refreshed = await client.get_valid_credential(tokens, combained_scopes)
+    tokens, combained_scopes = await get_tokens(
+        scopes=scopes, user=user, service=service
+    )
+    credential, is_refreshed = await client.get_valid_credential(
+        tokens, combained_scopes
+    )
     if is_refreshed:
         tokens.access_token = credential.token
         tokens.refresh_token = credential.refresh_token
@@ -121,15 +125,41 @@ async def google_Oauth2_callback(
         display_name=profile["name"],
         access_token=google_tokens["access_token"],
         refresh_token=google_tokens["refresh_token"],
+        default=True,
         scopes=scopes_dict,
         expires_at=expires_at,
         extra_info={"id_token": google_tokens["id_token"]},
     )
-    token_service.create_or_update(google_token_data.model_dump(), lookup_field="email")
+    token_service.unset_default_and_create_or_update(google_token_data.model_dump())
     return {
         "status_code": 200,
         "detail": {
             "message": "Google authentication successful.",
+        },
+    }
+
+
+@google_router.get("/all_avaialble_accounts")
+async def get_all_available_accounts(
+    token_data=Depends(JWTBearer()),
+    token_service: GoogleTokenService = Depends(token_service),
+    user_service: UserService = Depends(user_service),
+) -> Response:
+    """Gets all available accounts for the user."""
+
+    user_info, _ = token_data
+    user = get_user(user_info, user_service)
+    if not user:
+        await raise_no_user_exception(SCOPES["BASIC"])
+
+    accounts = token_service.get_all(user_id=user.id)
+    emails = [account.email for account in accounts]
+
+    return {
+        "status_code": 200,
+        "detail": {
+            "message": "Accounts fetched successfully.",
+            "data": emails,
         },
     }
 
@@ -150,7 +180,10 @@ async def send_email(
         user_info, token_service, user_service, scopes
     )
     response = await client.send_mail(
-        **data.model_dump(), from_email=email, credentials=credentials, combained_scopes=combained_scopes
+        **data.model_dump(),
+        from_email=email,
+        credentials=credentials,
+        combained_scopes=combained_scopes
     )
     return {
         "status_code": 200,

@@ -28,6 +28,7 @@ class GoogleTokens(BaseModel):
     expires_at: datetime.datetime
     refresh_token: str
     scope: str
+    default: bool = False
     token_type: str
     id_token: str
 
