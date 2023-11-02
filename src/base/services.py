@@ -28,7 +28,7 @@ class ListCreateUpdateRetrieveDeleteService:
         logger.error(f"Error with model {model_name}: {error}")
         raise HTTPException(status_code=400, detail=error_message)
     @cached(cache)
-    def get(self, **kwargs) -> Query:
+    def get(self, **kwargs) -> Query | None:
         try:
             stmt = select(self.model_class).where(
                 and_(
@@ -42,9 +42,9 @@ class ListCreateUpdateRetrieveDeleteService:
             with self.db:
                 results = self.db.execute(stmt).scalar_one()
             return results
-        except NoResultFound:
-            logger.info(
-                f"No result found for model {self.model_class} with parameters {kwargs}"
+        except Exception as e:
+            print(
+                f"No result found for model {self.model_class} with parameters {kwargs} in {e}"
             )
             return None
 

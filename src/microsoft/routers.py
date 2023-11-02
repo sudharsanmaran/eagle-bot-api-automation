@@ -24,7 +24,7 @@ async def retrieve_url_or_token(
         _user_service=Depends(user_service)
 ) -> Response:
     user_name = user[0]['email']
-    scopes = get_busy_or_free_schedule_scopes()[:-1]
+    scopes = get_busy_or_free_schedule_scopes()
     data = get_access_token_or_url(
         db=db, scopes=scopes, user_name=user_name,
         user_service=_user_service, service=service

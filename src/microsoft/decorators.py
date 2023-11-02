@@ -49,9 +49,12 @@ class Authorization:
         return True
 
     def retrieve_ms_token(self) -> dict:
-        ms_token = self.service.get_token_with_user_id(self.user.id)
+        print(self.user.id)
+        ms_token = self.service.get(user_id=self.user.id)
         if ms_token:
             existing_scopes = ms_token.scopes.keys()
+            if 'offline_access' in self.scopes:
+                self.scopes.remove('offline_access')
             if self.check_scopes(existing_scopes):
                 if datetime.utcnow().timestamp().__int__() <= ms_token.expires_at:
                     return dict(access_token=ms_token.access_token)
