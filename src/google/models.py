@@ -1,9 +1,11 @@
 import datetime
 from sqlalchemy import Column, DateTime
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy.orm import Mapped
 
 from src.base.mixins import TimestampMixin, UUIDMixin, TokenInfoMixin
 from src.database import Base
+
+# flake8: noqa
 from src.base.models import User
 
 
