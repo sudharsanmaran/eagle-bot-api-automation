@@ -9,7 +9,6 @@ from .services import GoogleTokenService
 def token_service(db: Session = Depends(get_db)):
     return GoogleTokenService(db)
 
+
 def user_service(db: Session = Depends(get_db)):
     return UserService(db)
-
-

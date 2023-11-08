@@ -2,7 +2,6 @@
 
 import datetime
 from typing import List, Optional
-import uuid
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from src.base.schemas import TokenInfo
