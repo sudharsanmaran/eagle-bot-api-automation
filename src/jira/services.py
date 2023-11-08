@@ -1,5 +1,4 @@
 import uuid
-from sqlalchemy import and_, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm.query import Query
 from sqlalchemy.orm import session
@@ -13,15 +12,16 @@ class JiraUserService(ListCreateUpdateRetrieveDeleteService):
     def __init__(self, db: session):
         super().__init__(db, JiraUser, "id")
 
-    def get_by_userId(self, userId: uuid.UUID) -> Query:
-        return self.get(user_id=userId)
-    
+    def get_default_user(self, userId: uuid.UUID) -> Query:
+        return self.get(user_id=userId, default=True)
+
+
 class JiraResouceService(ListCreateUpdateRetrieveDeleteService):
     def __init__(self, db: session):
         super().__init__(db, JiraResouces, "id")
 
-    def get_by_userId(self, userId: uuid.UUID) -> Query:
-        return self.get(user_id=userId)
+    def get_default_user(self, userId: uuid.UUID) -> Query:
+        return self.get(user_id=userId, default=True)
 
     def unset_default_create(self, obj) -> Query:
         unset_stmt = self.get_unset_deafult_stmt(obj["user_id"])

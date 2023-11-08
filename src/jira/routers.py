@@ -1,11 +1,7 @@
-from datetime import datetime
-import os
 from typing import Any
-from fastapi import APIRouter, Depends, HTTPException
-
+from fastapi import APIRouter, Depends
 from src.auth import JWTBearer
 from .client import JiraClient
-
 from src.base.schemas import User
 from src.jira.schemas import (
     CreateIssueRequest,
@@ -13,7 +9,6 @@ from src.jira.schemas import (
     JiraUserSchemas,
     CreateProjectRequest,
 )
-
 from src.base.services import UserService
 from src.jira.services import JiraResouceService, JiraUserService
 
@@ -46,13 +41,13 @@ async def Oauth2_callback(
     jira_resouce_service: JiraResouceService = Depends(get_resource_service),
 ) -> Any:
     user_info, sso_token = token_data
-    # jira_token_res = await client.exchange_code_for_tokens(code)
-    jira_token_res = {
-        "access_token": "eyJraWQiOiJmZTM2ZThkMzZjMTA2N2RjYTgyNTg5MmEiLCJhbGciOiJSUzI1NiJ9.eyJqdGkiOiJmNjkxNDU3MS04ZmUyLTRmNGEtOGMyNy0xOGQ3ZTJkZDhiODkiLCJzdWIiOiI3MTIwMjA6YWFhNDhiZjItODNmZi00ZTQ0LTgzNWUtNzBmOGFiZTAwNDdhIiwibmJmIjoxNjk4Mzg4NDQxLCJpc3MiOiJodHRwczovL2F1dGguYXRsYXNzaWFuLmNvbSIsImlhdCI6MTY5ODM4ODQ0MSwiZXhwIjoxNjk4MzkyMDQxLCJhdWQiOiJxRmV0eGZIQ21INnlmOHBiZlN5ZzNFMzZkYmV4eXRDTyIsInNjb3BlIjoibWFuYWdlOmppcmEtY29uZmlndXJhdGlvbiBvZmZsaW5lX2FjY2VzcyByZWFkOm1lIiwiaHR0cHM6Ly9hdGxhc3NpYW4uY29tL3N5c3RlbUFjY291bnRFbWFpbCI6ImRlZGJjOGQzLTA3ZjEtNGUxMS05NDZkLTJjM2JhYTM4MDFjMEBjb25uZWN0LmF0bGFzc2lhbi5jb20iLCJodHRwczovL2lkLmF0bGFzc2lhbi5jb20vYXRsX3Rva2VuX3R5cGUiOiJBQ0NFU1MiLCJodHRwczovL2F0bGFzc2lhbi5jb20vZmlyc3RQYXJ0eSI6ZmFsc2UsImh0dHBzOi8vYXRsYXNzaWFuLmNvbS92ZXJpZmllZCI6dHJ1ZSwiY2xpZW50X2lkIjoicUZldHhmSENtSDZ5ZjhwYmZTeWczRTM2ZGJleHl0Q08iLCJodHRwczovL2F0bGFzc2lhbi5jb20vc3lzdGVtQWNjb3VudElkIjoiNzEyMDIwOmRhNzY5M2I2LTQyNTctNDk3ZS1iNjI0LThlNjQxY2YxMTNlYiIsImh0dHBzOi8vaWQuYXRsYXNzaWFuLmNvbS9wcm9jZXNzUmVnaW9uIjoidXMtd2VzdC0yIiwiaHR0cHM6Ly9hdGxhc3NpYW4uY29tL2VtYWlsRG9tYWluIjoiZ21haWwuY29tIiwiaHR0cHM6Ly9hdGxhc3NpYW4uY29tLzNsbyI6dHJ1ZSwiaHR0cHM6Ly9hdGxhc3NpYW4uY29tL29hdXRoQ2xpZW50SWQiOiJxRmV0eGZIQ21INnlmOHBiZlN5ZzNFMzZkYmV4eXRDTyIsImh0dHBzOi8vaWQuYXRsYXNzaWFuLmNvbS92ZXJpZmllZCI6dHJ1ZSwiaHR0cHM6Ly9pZC5hdGxhc3NpYW4uY29tL3VqdCI6IjNkOGY3Mjg3LTI0M2EtNDBjNC04ZGM2LTg5MGE1NmQ1M2FiYiIsImh0dHBzOi8vaWQuYXRsYXNzaWFuLmNvbS9zZXNzaW9uX2lkIjoiNjdlZTkzZTktYzM5OS00YmRhLTllYzQtOTBkZWVlOTFjYzUzIiwiaHR0cHM6Ly9hdGxhc3NpYW4uY29tL3N5c3RlbUFjY291bnRFbWFpbERvbWFpbiI6ImNvbm5lY3QuYXRsYXNzaWFuLmNvbSJ9.kSxBcNvFstb_mLxNGc2NyTpp4E538t1nKWCmBg16z3JzwuiodhozRlA5DIu8zS8VEnsm3OA0O_6wLswTUIU5RpVWlev0EKhwp9Yepyjv0vW96ViPybCu-S3_MnekBRhKaEfFKb31LReuKqr2ElLiaWi9tAmqIh2SXp7viU8RN1VgtJqJDN8L_WuMPRqCQk0ep6dasXcQOvlFWZz-jGQNJRgylQbGy1zQ3Xdan_41O2JAyQsgAOJPhivOYLRe9GR7aYUapi1AuzzWjKr6VaDslAFIqQ8FWHNXdqTJ2cMdobQyRDm4WyJmxD7pXUOAuRw3dy9GeDNZVM6GeX5NjQ1KiA",
-        "scope": "manage:jira-configuration offline_access read:me",
-        "refresh_token": "eyJraWQiOiI1MWE2YjE2MjRlMTQ5ZDFiYTdhM2VmZjciLCJhbGciOiJSUzI1NiJ9.eyJqdGkiOiI3MDExNmZlMC1iMWUwLTQyOTItOGRhZS0yZjZmYjc1NTk2YzQiLCJzdWIiOiI3MTIwMjA6YWFhNDhiZjItODNmZi00ZTQ0LTgzNWUtNzBmOGFiZTAwNDdhIiwibmJmIjoxNjk4Mzg4NDQxLCJpc3MiOiJodHRwczovL2F1dGguYXRsYXNzaWFuLmNvbSIsImlhdCI6MTY5ODM4ODQ0MSwiZXhwIjoxNzA2MTY0NDQxLCJhdWQiOiJxRmV0eGZIQ21INnlmOHBiZlN5ZzNFMzZkYmV4eXRDTyIsImh0dHBzOi8vaWQuYXRsYXNzaWFuLmNvbS9hdGxfdG9rZW5fdHlwZSI6IlJPVEFUSU5HX1JFRlJFU0giLCJ2ZXJpZmllZCI6InRydWUiLCJzY29wZSI6Im1hbmFnZTpqaXJhLWNvbmZpZ3VyYXRpb24gb2ZmbGluZV9hY2Nlc3MgcmVhZDptZSIsImh0dHBzOi8vaWQuYXRsYXNzaWFuLmNvbS9wcm9jZXNzUmVnaW9uIjoidXMtd2VzdC0yIiwiaHR0cHM6Ly9pZC5hdGxhc3NpYW4uY29tL3BhcmVudF9hY2Nlc3NfdG9rZW5faWQiOiJmNjkxNDU3MS04ZmUyLTRmNGEtOGMyNy0xOGQ3ZTJkZDhiODkiLCJodHRwczovL2lkLmF0bGFzc2lhbi5jb20vdmVyaWZpZWQiOnRydWUsImh0dHBzOi8vaWQuYXRsYXNzaWFuLmNvbS91anQiOiIzZDhmNzI4Ny0yNDNhLTQwYzQtOGRjNi04OTBhNTZkNTNhYmIiLCJodHRwczovL2lkLmF0bGFzc2lhbi5jb20vcmVmcmVzaF9jaGFpbl9pZCI6InFGZXR4ZkhDbUg2eWY4cGJmU3lnM0UzNmRiZXh5dENPLTcxMjAyMDphYWE0OGJmMi04M2ZmLTRlNDQtODM1ZS03MGY4YWJlMDA0N2EtNzQwZDBmNWQtOGVjMC00MzA5LWFjZWItMjY2NDQxNTg1YzdiIiwiaHR0cHM6Ly9pZC5hdGxhc3NpYW4uY29tL3Nlc3Npb25faWQiOiI2N2VlOTNlOS1jMzk5LTRiZGEtOWVjNC05MGRlZWU5MWNjNTMifQ.LgrZvKYb-GCmTjyqhy9KgDelXzAGAYhum96X2JeB4F1xueCTfw6R4LP7XWXOTUTZEAfrZnGCwyFXfcCq39Gt1gZp9uhUt7YwvX5oGsrB5nNC9Rn3OWRRrd9GzG-DE0A4kpblNASRlbWTv-Oo_dkCi4l1sq-G720jMLTtaNFCpiR8fm6cz4ph0Y5YKkpaWfvyKYKvr88LTAy94EGmL1XDMhr8-jPm65tRc0kNnsfsFtbkPEfDxjMLJOL2TAP-8g2VmCuMRmJmfsbQZ1J1JnvN2WdP-8XeDHesnHB4WEJ2HS1dAzNp630LtQTxwO2RDyhYbDaABXoGAf7f1gQybiqwig",
-        "expires_in": 1600,
-    }
+    jira_token_res = await client.exchange_code_for_tokens(code)
+    # jira_token_res = {
+    #     "access_token": "eyJraWQiOiJmZTM2ZThkMzZjMTA2N2RjYTgyNTg5MmEiLCJhbGciOiJSUzI1NiJ9.eyJqdGkiOiJmMTdlMzM3Mi02MDRiLTQ2MWQtYTZmMi1kYTIzZmQ3ZjEzMDIiLCJzdWIiOiI3MTIwMjA6YWFhNDhiZjItODNmZi00ZTQ0LTgzNWUtNzBmOGFiZTAwNDdhIiwibmJmIjoxNjk4NDAyNDU0LCJpc3MiOiJodHRwczovL2F1dGguYXRsYXNzaWFuLmNvbSIsImlhdCI6MTY5ODQwMjQ1NCwiZXhwIjoxNjk4NDA2MDU0LCJhdWQiOiJxRmV0eGZIQ21INnlmOHBiZlN5ZzNFMzZkYmV4eXRDTyIsInNjb3BlIjoibWFuYWdlOmppcmEtY29uZmlndXJhdGlvbiBvZmZsaW5lX2FjY2VzcyByZWFkOm1lIiwiaHR0cHM6Ly9hdGxhc3NpYW4uY29tL3N5c3RlbUFjY291bnRFbWFpbCI6ImRlZGJjOGQzLTA3ZjEtNGUxMS05NDZkLTJjM2JhYTM4MDFjMEBjb25uZWN0LmF0bGFzc2lhbi5jb20iLCJodHRwczovL2lkLmF0bGFzc2lhbi5jb20vYXRsX3Rva2VuX3R5cGUiOiJBQ0NFU1MiLCJodHRwczovL2F0bGFzc2lhbi5jb20vZmlyc3RQYXJ0eSI6ZmFsc2UsImh0dHBzOi8vYXRsYXNzaWFuLmNvbS92ZXJpZmllZCI6dHJ1ZSwiY2xpZW50X2lkIjoicUZldHhmSENtSDZ5ZjhwYmZTeWczRTM2ZGJleHl0Q08iLCJodHRwczovL2F0bGFzc2lhbi5jb20vc3lzdGVtQWNjb3VudElkIjoiNzEyMDIwOmRhNzY5M2I2LTQyNTctNDk3ZS1iNjI0LThlNjQxY2YxMTNlYiIsImh0dHBzOi8vaWQuYXRsYXNzaWFuLmNvbS91anQiOiJkOWE4NjU0Yi05MjA1LTQzNDEtOWE0Zi1iMWVhOWZkYzMwOWMiLCJodHRwczovL2lkLmF0bGFzc2lhbi5jb20vcHJvY2Vzc1JlZ2lvbiI6InVzLXdlc3QtMiIsImh0dHBzOi8vYXRsYXNzaWFuLmNvbS9lbWFpbERvbWFpbiI6ImdtYWlsLmNvbSIsImh0dHBzOi8vYXRsYXNzaWFuLmNvbS8zbG8iOnRydWUsImh0dHBzOi8vYXRsYXNzaWFuLmNvbS9vYXV0aENsaWVudElkIjoicUZldHhmSENtSDZ5ZjhwYmZTeWczRTM2ZGJleHl0Q08iLCJodHRwczovL2lkLmF0bGFzc2lhbi5jb20vdmVyaWZpZWQiOnRydWUsImh0dHBzOi8vaWQuYXRsYXNzaWFuLmNvbS9zZXNzaW9uX2lkIjoiNjdlZTkzZTktYzM5OS00YmRhLTllYzQtOTBkZWVlOTFjYzUzIiwiaHR0cHM6Ly9hdGxhc3NpYW4uY29tL3N5c3RlbUFjY291bnRFbWFpbERvbWFpbiI6ImNvbm5lY3QuYXRsYXNzaWFuLmNvbSJ9.tcDvMjWTSPgqpnH-szo08ZicfrJbgHl3NipLxwU_K-fPe9oB2qMU2ldU85PvjOnXstAt_VcQDsRbn0VywPo_qjJ6xRvDtrNTcPV3ez7RwdV_msOhlKHkQ5pyp-cSEPi--WNrJPpCNlC0aWKXCd3Byviv8hdD07oJE-VNxmR8Dxtb86OIt-PmXbs8SUswFR0HHh7UNNQVSL20p9fFAirqrXMJmnFqjLUz07yHInyEQpnXPuEzTVLxGJr_EP6fC6vy-BWgSHrjYBk1pv_p9FV4-kFludJYSYCS1R5TjQp-6bsIhNAnpXcqQgLR7A-DyKQtRhZDGEoOcVR7vMXTcQFeig",
+    #     "scope": "manage:jira-configuration offline_access read:me",
+    #     "refresh_token": "eyJraWQiOiI1MWE2YjE2MjRlMTQ5ZDFiYTdhM2VmZjciLCJhbGciOiJSUzI1NiJ9.eyJqdGkiOiJhMjRlNDM1ZC04NTY2LTQ5MzUtYjZlMy1iNjlkMTUyMmU3NjgiLCJzdWIiOiI3MTIwMjA6YWFhNDhiZjItODNmZi00ZTQ0LTgzNWUtNzBmOGFiZTAwNDdhIiwibmJmIjoxNjk4Mzk2ODY0LCJpc3MiOiJodHRwczovL2F1dGguYXRsYXNzaWFuLmNvbSIsImlhdCI6MTY5ODM5Njg2NCwiZXhwIjoxNzA2MTcyODY0LCJhdWQiOiJxRmV0eGZIQ21INnlmOHBiZlN5ZzNFMzZkYmV4eXRDTyIsImh0dHBzOi8vaWQuYXRsYXNzaWFuLmNvbS9hdGxfdG9rZW5fdHlwZSI6IlJPVEFUSU5HX1JFRlJFU0giLCJ2ZXJpZmllZCI6InRydWUiLCJzY29wZSI6Im1hbmFnZTpqaXJhLWNvbmZpZ3VyYXRpb24gb2ZmbGluZV9hY2Nlc3MgcmVhZDptZSIsImh0dHBzOi8vaWQuYXRsYXNzaWFuLmNvbS9wcm9jZXNzUmVnaW9uIjoidXMtd2VzdC0yIiwiaHR0cHM6Ly9pZC5hdGxhc3NpYW4uY29tL3JlZnJlc2hfY2hhaW5faWQiOiJxRmV0eGZIQ21INnlmOHBiZlN5ZzNFMzZkYmV4eXRDTy03MTIwMjA6YWFhNDhiZjItODNmZi00ZTQ0LTgzNWUtNzBmOGFiZTAwNDdhLTk0ZGMzYWFmLTFlZDUtNDcwYi05MmI4LTIzMTc0MGVkOTZhNCIsImh0dHBzOi8vaWQuYXRsYXNzaWFuLmNvbS91anQiOiI2Y2I3ZTBkZS03OTA0LTQ0ZjktODBlNi00M2M2NGNjMzM5NDQiLCJodHRwczovL2lkLmF0bGFzc2lhbi5jb20vcGFyZW50X2FjY2Vzc190b2tlbl9pZCI6IjQ0OGFiMmU1LTRjODctNDgxYy1hMGNjLWJjYTYwNjkxYTI5OCIsImh0dHBzOi8vaWQuYXRsYXNzaWFuLmNvbS92ZXJpZmllZCI6dHJ1ZSwiaHR0cHM6Ly9pZC5hdGxhc3NpYW4uY29tL3Nlc3Npb25faWQiOiI2N2VlOTNlOS1jMzk5LTRiZGEtOWVjNC05MGRlZWU5MWNjNTMifQ.NxSVicUTXez-KDndL5u8Alj0iT1j3GNteTHn76DOv2a5rx0Cxaik1Znx7Zlzfgrbdq69_L8bTj7XBINFZjbHwhqMvjTj3E28NQuD8rd1TfV4kOiwo7fYhDfj_hbfZdcB1GH7mxp2AfQiS80ZRFH7bYZUExnRxjoWwnbMmYkD_-8-mZk38KNPZFj3xu_huV44HH4_9aMnIw-yMGrxFkZGtcwnRjUzbya4wP00AMyTvjw0CTYhF8a8vy25AS3rBPl4kISO75SI4JoORoBq274ZyUqKXOSTgN2x8xwgeD_7zMqCJNFppGwH1o2pGNJkJ7G_5pg2d4caiCFrJLjHrCV1YA",
+    #     "expires_in": 1600,
+    # }
 
     user_details_res = await client.get_Jira_user(jira_token_res["access_token"])
     user_resouces_res = await client.get_user_accessible_resources(
@@ -79,16 +74,17 @@ async def Oauth2_callback(
         jira_user_data.model_dump()
     )
 
-    existed_user_resouces = jira_resouce_service.get_by_userId(jira_user.id)
+    existed_user_resouces = jira_resouce_service.get_all(user_id=jira_user.id)
     new_resource = get_new_resource_from(existed_user_resouces, user_resouces_res)
-    jira_resouce_data = JiraResoucesSchemas(
-        user_id=jira_user.id,
-        resource_id=new_resource["id"],
-        resource_name=new_resource["name"],
-        default=True,
-        avatar_url=new_resource["avatarUrl"],
-    )
-    jira_resouce_service.unset_default_create(jira_resouce_data.model_dump())
+    if new_resource:
+        jira_resouce_data = JiraResoucesSchemas(
+            user_id=jira_user.id,
+            resource_id=new_resource["id"],
+            resource_name=new_resource["name"],
+            default=True,
+            avatar_url=new_resource["avatarUrl"],
+        )
+        jira_resouce_service.unset_default_create(jira_resouce_data.model_dump())
 
     return {"status": "ok"}
 
@@ -103,7 +99,7 @@ async def create_project(
 ) -> Any:
     scope = f"{JiarScope.BASIC} {JiarScope.MANAGE_JIRA_CONF}"
 
-    resource, jira_user, verify = await validate_scope_for_email(
+    resource_and_jira_user_data = await validate_scope_for_email(
         scope,
         token_data[0]["email"],
         user_service,
@@ -111,12 +107,19 @@ async def create_project(
         resource_service,
         client,
     )
-    if not verify:
-        if resource:
-            scope = f"{dict2str(resource.scopes)} {scope}"
+    if not resource_and_jira_user_data["verify"]:
+        if resource_and_jira_user_data.get("resource"):
+            scope = (
+                f"{dict2str(resource_and_jira_user_data['resource'].scopes)} {scope}"
+            )
         return await client.get_consent_url(scope, "Access_denied")
 
-    project = await client.create_project(resource, jira_user, data.model_dump())
+    project = await client.create_project(
+        resource_and_jira_user_data["resource"].resource_id,
+        resource_and_jira_user_data["jira_user"].account_id,
+        resource_and_jira_user_data["jira_user"].access_token,
+        data.model_dump(),
+    )
     return {"status": "ok", "details": project}
 
 
@@ -130,7 +133,7 @@ async def create_issue(
 ) -> Any:
     scope = f"{JiarScope.BASIC} {JiarScope.WRITE_JIRA_WORK}"
 
-    resource, jira_user, verify = await validate_scope_for_email(
+    resource_and_jira_user_data = await validate_scope_for_email(
         scope,
         token_data[0]["email"],
         user_service,
@@ -138,10 +141,16 @@ async def create_issue(
         resource_service,
         client,
     )
-    if not verify:
-        if resource:
-            scope = f"{dict2str(resource.scopes)} {scope}"
+    if not resource_and_jira_user_data["verify"]:
+        if resource_and_jira_user_data.get("resource"):
+            scope = (
+                f"{dict2str(resource_and_jira_user_data['resource'].scopes)} {scope}"
+            )
         return await client.get_consent_url(scope, "Access_denied")
 
-    issue = await client.create_issue(resource, jira_user, data.model_dump())
+    issue = await client.create_issue(
+        resource_and_jira_user_data["resource"],
+        resource_and_jira_user_data["jira_user"],
+        data.model_dump(),
+    )
     return {"status": "ok", "details": issue}
