@@ -97,7 +97,7 @@ class JiraClient:
         }
         query_string = urlencode(query_params, quote_via=quote)
 
-        consent_url = f"https://auth.atlassian.com/authorize?" + query_string
+        consent_url = "https://auth.atlassian.com/authorize?" + query_string
         details = {
             "error": err_mess,
             "consent_url": consent_url,
@@ -128,30 +128,14 @@ class JiraClient:
                 await self.get_consent_url(dict2str(scopes), "unauthorized_client")
             return response
 
-    def fetch_jira_details_for_user(self, user_eamil):
-        # later get access token for user eamil
-        res = {
-            "access_token": os.getenv("JIRA_ACCESS_TOKEN"),
-            "account_id": "712020:aaa48bf2-83ff-4e44-835e-70f8abe0047a",
-            "resources_details": {
-                "id": "cd1ede5c-127f-4405-a54a-05ff6578a764",
-                "url": "https://eaglebottest2.atlassian.net",
-                "name": "eaglebottest2",
-                "scopes": [],
-                "avatarUrl": "https://site-admin-avatar-cdn.prod.public.atl-paas.net/avatars/240/koala.png",
-            },
-        }
-
-        return res
-
-    async def create_project(self, resource: object, jira_user: object, data):
+    async def create_project(self, resource_id, jira_user_acc_id, jira_user_token, data):
         """Creates a new project in Jira."""
         data["projectTemplateKey"] = "com.pyxis.greenhopper.jira:gh-simplified-basic"
         data["projectTypeKey"] = "software"
-        data["leadAccountId"] = jira_user.account_id
-        cloudid = resource.resource_id
+        data["leadAccountId"] = jira_user_acc_id
+        cloudid = resource_id
         headers = {
-            "Authorization": f"Bearer {resource.access_token}",
+            "Authorization": f"Bearer {jira_user_token}",
             "Content-Type": "application/json",
         }
 
@@ -164,7 +148,7 @@ class JiraClient:
 
         return response
 
-    async def create_issue(self, resource: object, jira_user: object, data):
+    async def create_issue(self, resource_id, jira_user_acc_id, jira_user_token, data):
         """Creates a new issue for project in Jira."""
         payload = {
             "fields": {
@@ -173,9 +157,9 @@ class JiraClient:
                 "issuetype": {"id": data['issuetype']},
             }
         }
-        cloudid = resource.resource_id
+        cloudid = resource_id
         headers = {
-            "Authorization": f"Bearer {resource.access_token}",
+            "Authorization": f"Bearer {jira_user_token}",
             "Content-Type": "application/json",
         }
 
